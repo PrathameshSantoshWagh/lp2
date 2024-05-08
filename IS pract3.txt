@@ -1,4 +1,4 @@
-pip install pyDES on terminal
+
 
 from pyDes import des, PAD_PKCS5, ECB
 
@@ -19,8 +19,9 @@ def decrypt_des(key, ciphertext):
 def main():
     # 8-byte key (64 bits)
     key = b'abcdefgh'
-    # Input plaintext
-    plaintext = b'Hello123'
+    
+    # Input plaintext from user
+    plaintext = input("Enter the plaintext: ").encode()
     
     # Encryption
     encrypted_text = encrypt_des(key, plaintext)
