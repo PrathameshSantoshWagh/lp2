@@ -1,111 +1,77 @@
-#include <iostream>
-#include <cmath>
-#include <cstdlib>
-#include <ctime>
-#include <string>
+import random
 
-using namespace std;
+# Function to check if a number is prime
+def is_prime(n):
+    if n <= 1:
+        return False
+    elif n <= 3:
+        return True
+    elif n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
 
-// Function to check if a number is prime
-bool isPrime(int n) {
-    if (n <= 1) return false;
-    if (n <= 3) return true;
-    if (n % 2 == 0 || n % 3 == 0) return false;
-    for (int i = 5; i * i <= n; i += 6) {
-        if (n % i == 0 || n % (i + 2) == 0)
-            return false;
-    }
-    return true;
-}
+# Function to generate random prime number
+def generate_prime(bits):
+    while True:
+        num = random.getrandbits(bits)
+        if is_prime(num):
+            return num
 
-// Function to find gcd of two numbers
-int gcd(int a, int b) {
-    if (b == 0) return a;
-    return gcd(b, a % b);
-}
+# Function to calculate modular inverse
+def mod_inverse(a, m):
+    m0, x0, x1 = m, 0, 1
+    while a > 1:
+        q = a // m
+        m, a = a % m, m
+        x0, x1 = x1 - q * x0, x0
+    return x1 + m0 if x1 < 0 else x1
 
-// Function to find modular inverse of a number
-int modInverse(int a, int m) {
-    a = a % m;
-    for (int x = 1; x < m; x++) {
-        if ((a * x) % m == 1) return x;
-    }
-    return 1;
-}
+# Function to generate RSA keys
+def generate_rsa_keys(bits):
+    p = generate_prime(bits // 2)
+    q = generate_prime(bits // 2)
+    n = p * q
+    phi = (p - 1) * (q - 1)
+    e = 65537
+    d = mod_inverse(e, phi)
+    return ((n, e), (n, d))
 
-// Function to generate public and private keys
-void generateKeys(int& e, int& d, int& n) {
-    // Choose two distinct prime numbers
-    int p, q;
-    do {
-        p = rand() % 10 + 1;
-    } while (!isPrime(p));
-    do {
-        q = rand() % 10 + 1;
-    } while (!isPrime(q));
+# Function to encrypt message using RSA public key
+def encrypt(message, public_key):
+    n, e = public_key
+    return pow(message, e, n)
 
-    // Compute n
-    n = p * q;
+# Function to decrypt message using RSA private key
+def decrypt(ciphertext, private_key):
+    n, d = private_key
+    return pow(ciphertext, d, n)
 
-    // Compute phi(n)
-    int phi = (p - 1) * (q - 1);
+# Main function
+def main():
+    bits = int(input("Enter the number of bits for RSA keys: "))
+    plaintext = input("Enter the plaintext: ")
 
-    // Choose an integer e such that 1 < e < phi and gcd(e, phi) = 1
-    do {
-        e = rand() % phi;
-    } while (gcd(e, phi) != 1);
+    # Convert plaintext to integer using UTF-8 encoding
+    plaintext_int = int.from_bytes(plaintext.encode('utf-8'), 'big')
 
-    // Compute d, the modular inverse of e modulo phi
-    d = modInverse(e, phi);
-}
+    # Generate RSA keys
+    public_key, private_key = generate_rsa_keys(bits)
 
-// Function to encrypt a message
-string encrypt(string message, int e, int n) {
-    string encrypted = "";
-    for (char c : message) {
-        int m = c;
-        int encryptedChar = pow(m, e);
-        encryptedChar = encryptedChar % n;
-        encrypted += to_string(encryptedChar) + " ";
-    }
-    return encrypted;
-}
+    # Encrypt plaintext using public key
+    ciphertext = encrypt(plaintext_int, public_key)
+    print("Encrypted ciphertext:", ciphertext)
 
-// Function to decrypt a message
-string decrypt(string encrypted, int d, int n) {
-    string decrypted = "";
-    int pos = 0;
-    while (pos < encrypted.length()) {
-        int encryptedChar = 0;
-        while (pos < encrypted.length() && encrypted[pos] != ' ') {
-            encryptedChar = encryptedChar * 10 + (encrypted[pos] - '0');
-            pos++;
-        }
-        pos++;
-        int decryptedChar = pow(encryptedChar, d);
-        decryptedChar = decryptedChar % n;
-        decrypted += char(decryptedChar);
-    }
-    return decrypted;
-}
+    # Decrypt ciphertext using private key
+    decrypted_text_int = decrypt(ciphertext, private_key)
 
-int main() {
-    srand(time(0));
-    int e, d, n;
-    generateKeys(e, d, n);
-    cout << "Public key (e, n): (" << e << ", " << n << ")" << endl;
-    cout << "Private key (d, n): (" << d << ", " << n << ")" << endl;
+    # Convert decrypted plaintext integer to text
+    decrypted_text = decrypted_text_int.to_bytes((decrypted_text_int.bit_length() + 7) // 8, 'big').decode('utf-8')
+    print("Decrypted plaintext:", decrypted_text)
 
-    string message;
-    cout << "Enter message to encrypt: ";
-    getline(cin, message);
-    cout << "Original message: " << message << endl;
-
-    string encrypted = encrypt(message, e, n);
-    cout << "Encrypted message: " << encrypted << endl;
-
-    string decrypted = decrypt(encrypted, d, n);
-    cout << "Decrypted message: " << decrypted << endl;
-
-    return 0;
-}
+if __name__ == "__main__":
+    main()
