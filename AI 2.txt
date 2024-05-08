@@ -1,115 +1,103 @@
-#include <iostream>
-#include <vector>
-#include <queue>
-#include <cmath>
+def aStarAlgo(start_node, stop_node, graph_nodes, h_dist):
+    open_set = set(start_node)
+    closed_set = set()
+    g = {}
+    parents = {}
+    g[start_node] = 0
+    parents[start_node] = start_node
+    
+    while len(open_set) > 0:
+        n = None
+        
+        for v in open_set:
+            if n is None or g[v] + heuristic(v, h_dist) < g[n] + heuristic(n, h_dist):
+                n = v
+                
+        if n == stop_node or graph_nodes[n] is None:
+            pass
+        else:
+            for (m, weight) in get_neighbors(n, graph_nodes):
+                if m not in open_set and m not in closed_set:
+                    open_set.add(m)
+                    parents[m] = n
+                    g[m] = g[n] + weight
+                
+                else:
+                    if g[m] > g[n] + weight:
+                        g[m] = g[n] + weight
+                        parents[m] = n
+                        
+                        if m in closed_set:
+                            closed_set.remove(m)
+                            open_set.add(m)
+                            
+        if n is None:
+            print('Path does not exist!')
+            return None
+            
+        if n == stop_node:
+            path = []
+                
+            while parents[n] != n:
+                path.append(n)
+                n = parents[n]
+                    
+            path.append(start_node)
+            
+            path.reverse()
+            
+            print('Path found: {}'.format(path))
+            return None
+            
+        open_set.remove(n)
+        closed_set.add(n)
+            
+    print('Path does not exist!') 
+    return None
+    
+    
+def get_neighbors(v, graph_nodes):
+    if v in graph_nodes:
+        return graph_nodes[v]
+    else:
+        return None
 
-using namespace std;
+def heuristic(n, h_dist):
+    return h_dist[n]
 
-// Structure to represent a node in the grid
-struct Node {
-    int x, y; // Coordinates of the node
-    int f, g, h; // f = g + h, g = cost from start node, h = heuristic cost to goal node
-    Node* parent; // Pointer to the parent node
+# Take input for graph nodes
+graph_nodes = {}
+num_nodes = int(input("Enter the number of nodes in the graph: "))
+for _ in range(num_nodes):
+    node = input("Enter node: ").upper()
+    neighbors = input(f"Enter neighbors of {node} (comma-separated, format: node1,weight1,node2,weight2,...): ").split(',')
+    graph_nodes[node] = [(neighbors[i], int(neighbors[i+1])) for i in range(0, len(neighbors), 2)]
 
-    Node(int x, int y) : x(x), y(y), f(0), g(0), h(0), parent(nullptr) {}
+# Take input for heuristic distances
+h_dist = {}
+for node in graph_nodes.keys():
+    h = int(input(f"Enter heuristic distance for node {node}: "))
+    h_dist[node] = h
 
-    // Calculate the heuristic (Manhattan distance)
-    void calculateH(const Node& goal) {
-        h = abs(x - goal.x) + abs(y - goal.y);
-    }
+start_node = input("Enter start node: ").upper()
+stop_node = input("Enter stop node: ").upper()
 
-    // Calculate the total cost f
-    void calculateF() {
-        f = g + h;
-    }
-};
-
-// Custom comparator for priority queue
-struct CompareNode {
-    bool operator()(const Node* lhs, const Node* rhs) const {
-        return lhs->f > rhs->f;
-    }
-};
-
-// A* search algorithm
-vector<pair<int, int>> aStarSearch(const vector<vector<int>>& grid, pair<int, int> start, pair<int, int> goal) {
-    int rows = grid.size();
-    int cols = grid[0].size();
-
-    Node* startNode = new Node(start.first, start.second);
-    Node* goalNode = new Node(goal.first, goal.second);
-
-    // Create open and closed lists
-    priority_queue<Node*, vector<Node*>, CompareNode> openList;
-    vector<vector<bool>> closedList(rows, vector<bool>(cols, false));
-
-    openList.push(startNode);
-
-    // Run A* algorithm
-    while (!openList.empty()) {
-        Node* current = openList.top();
-        openList.pop();
-        closedList[current->x][current->y] = true;
-
-        if (current->x == goalNode->x && current->y == goalNode->y) {
-            // Path found, reconstruct and return the path
-            vector<pair<int, int>> path;
-            while (current != nullptr) {
-                path.push_back({current->x, current->y});
-                current = current->parent;
-            }
-            vector<pair<int, int>> reversedPath(path.rbegin(), path.rend());
-            return reversedPath;
-        }
-
-        // Generate neighbors
-        vector<pair<int, int>> neighbors = {
-            {current->x - 1, current->y}, {current->x + 1, current->y},
-            {current->x, current->y - 1}, {current->x, current->y + 1}
-        };
-
-        for (const auto& neighbor : neighbors) {
-            int nx = neighbor.first, ny = neighbor.second;
-            if (nx >= 0 && nx < rows && ny >= 0 && ny < cols && !closedList[nx][ny] && grid[nx][ny] != 1) {
-                Node* neighborNode = new Node(nx, ny);
-                neighborNode->g = current->g + 1;
-                neighborNode->calculateH(*goalNode);
-                neighborNode->calculateF();
-                neighborNode->parent = current;
-
-                openList.push(neighborNode);
-                closedList[nx][ny] = true;
-            }
-        }
-    }
-
-    return {}; // No path found
-}
-
-int main() {
-    // Example usage
-    vector<vector<int>> grid = {
-        {0, 0, 0, 0, 0},
-        {1, 1, 1, 1, 0},
-        {0, 0, 0, 0, 0},
-        {0, 1, 1, 1, 1},
-        {0, 0, 0, 0, 0}
-    };
-
-    pair<int, int> start = {0, 0};
-    pair<int, int> goal = {4, 4};
-
-    vector<pair<int, int>> path = aStarSearch(grid, start, goal);
-
-    if (path.empty()) {
-        cout << "No path found." << endl;
-    } else {
-        cout << "Path found:" << endl;
-        for (const auto& p : path) {
-            cout << "(" << p.first << ", " << p.second << ") ";
-        }
-        cout << endl;
-    }
-
-    return 0;
-}
+aStarAlgo(start_node, stop_node, graph_nodes, h_dist)
+//Enter the number of nodes in the graph: 5
+Enter node: A
+Enter neighbors of A (comma-separated, format: node1,weight1,node2,weight2,...): B,2,C,3
+Enter node: B
+Enter neighbors of B (comma-separated, format: node1,weight1,node2,weight2,...): D,1
+Enter node: C
+Enter neighbors of C (comma-separated, format: node1,weight1,node2,weight2,...): D,2,E,4
+Enter node: D
+Enter neighbors of D (comma-separated, format: node1,weight1,node2,weight2,...): E,1
+Enter node: E
+Enter neighbors of E (comma-separated, format: node1,weight1,node2,weight2,...): 
+Enter heuristic distance for node A: 5
+Enter heuristic distance for node B: 4
+Enter heuristic distance for node C: 3
+Enter heuristic distance for node D: 2
+Enter heuristic distance for node E: 1
+Enter start node: A
+Enter stop node: E
